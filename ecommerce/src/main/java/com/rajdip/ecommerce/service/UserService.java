@@ -1,16 +1,23 @@
 package com.rajdip.ecommerce.service;
 
 import com.rajdip.ecommerce.model.User;
+import com.rajdip.ecommerce.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
-public String createUser(User user){
-    return "User created:- "+user.getName()+ " user Id:- "+user.getId();
 
-}
+    private final UserRepository userRepository;
 
-public String getUserById(int id){
-    return "user Id from service "+id;
-}
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    public User createUser(User user) {
+        return userRepository.save(user);
+    }
+
+    public User getUserById(int id) {
+        return userRepository.findById(id).orElse(null);
+    }
 }
