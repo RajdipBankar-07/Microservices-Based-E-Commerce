@@ -5,7 +5,7 @@ import com.rajdip.ecommerce.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/users")
 public class HelloController {
 
     private final UserService userService;
@@ -16,15 +16,15 @@ public class HelloController {
 
     @GetMapping("/hello")
     public String hello() {
-        return "Spring Boot Project Running 🚀";
+        return "Spring Boot Project Running ";
     }
 
-    @PostMapping("/user")
+    @PostMapping
     public User createUser(@RequestBody User user) {
         return userService.createUser(user);
     }
 
-    @GetMapping("/user/{id}")
+    @GetMapping("/{id}")
     public User getUser(@PathVariable int id) {
         return userService.getUserById(id);
     }

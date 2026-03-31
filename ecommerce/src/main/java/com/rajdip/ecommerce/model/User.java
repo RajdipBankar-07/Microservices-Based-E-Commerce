@@ -11,8 +11,16 @@ public class User {
 
     private String name;
     private int age;
+    private String email;
 
-    // Getters & Setters
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     public int getId() {
         return id;
     }
