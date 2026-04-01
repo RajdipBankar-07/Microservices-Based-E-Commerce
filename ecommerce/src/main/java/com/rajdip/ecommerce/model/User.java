@@ -7,25 +7,19 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;   // ✅ FIXED (Long)
 
     private String name;
     private int age;
     private String email;
 
-    public String getEmail() {
-        return email;
-    }
+    // GETTERS & SETTERS
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -43,5 +37,13 @@ public class User {
 
     public void setAge(int age) {
         this.age = age;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }
