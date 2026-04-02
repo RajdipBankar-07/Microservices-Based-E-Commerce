@@ -1,7 +1,9 @@
 package com.rajdip.ecommerce.controller;
 
+import com.rajdip.ecommerce.dto.ApiResponse;
 import com.rajdip.ecommerce.model.User;
 import com.rajdip.ecommerce.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,14 +20,15 @@ public class HelloController {
 
     // CREATE
     @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userService.createUser(user);
+    public ApiResponse<User> createUser(@Valid @RequestBody User user) {
+        User savedUser = userService.createUser(user);
+        return new ApiResponse<>("User created successfully", savedUser);
     }
 
     // READ ALL
     @GetMapping
-    public List<User> getAllUsers() {
-        return userService.getAllUsers();
+    public ApiResponse<List<User>> getAllUsers() {
+        return new ApiResponse<>("Users fetched", userService.getAllUsers());
     }
 
     // READ BY ID
@@ -42,7 +45,7 @@ public class HelloController {
 
     // DELETE
     @DeleteMapping("/{id}")
-    public String deleteUser(@PathVariable Long id) {
-        return userService.deleteUser(id);
+    public ApiResponse<String> deleteUser(@PathVariable Long id) {
+        return new ApiResponse<>(userService.deleteUser(id), null);
     }
 }

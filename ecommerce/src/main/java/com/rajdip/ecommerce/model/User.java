@@ -1,4 +1,5 @@
 package com.rajdip.ecommerce.model;
+import jakarta.validation.constraints.*;
 
 import jakarta.persistence.*;
 
@@ -7,29 +8,20 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;   // ✅ FIXED (Long)
+    private Long id;
 
+    @NotBlank(message = "Name is required")
     private String name;
+
+    @Min(value = 18, message = "Age must be 18+")
     private int age;
+
+    @Email(message = "Invalid email format")
+    @NotBlank(message = "Email is required")
     private String email;
 
     // GETTERS & SETTERS
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public int getAge() {
         return age;
@@ -45,5 +37,21 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
