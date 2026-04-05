@@ -19,6 +19,7 @@ public class User {
     @Email(message = "Invalid email format")
     @NotBlank(message = "Email is required")
     private String email;
+    private String password;
 
     // GETTERS & SETTERS
 
@@ -53,5 +54,13 @@ public class User {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }
