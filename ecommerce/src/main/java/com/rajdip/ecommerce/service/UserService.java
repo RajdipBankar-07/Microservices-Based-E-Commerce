@@ -2,58 +2,35 @@ package com.rajdip.ecommerce.service;
 
 import com.rajdip.ecommerce.model.User;
 import com.rajdip.ecommerce.repository.UserRepository;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
 
-    private final UserRepository userRepository;
+    @Autowired
+    private UserRepository repo;
 
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    // Register User
+    public User register(User user) {
+        return repo.save(user);
     }
 
-    // CREATE
-    public User createUser(User user) {
-        return userRepository.save(user);
-    }
+    // Login Logic
+    public String login(String email, String password) {
+        Optional<User> user = repo.findByEmail(email);
 
-    // READ ALL
-    public List<User> getAllUsers(){
-        return userRepository.findAll();
-    }
-
-    // READ BY ID
-    public User getUserById(Long id){
-        return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-    }
-
-    // UPDATE
-    public User updateUser(Long id, User updatedUser){
-        User user = getUserById(id);
-        user.setName(updatedUser.getName());
-        user.setEmail(updatedUser.getEmail());
-        user.setAge(updatedUser.getAge());
-        return userRepository.save(user);
-    }
-
-    // DELETE
-    public String deleteUser(Long id){
-
-        if(userRepository.count() == 0){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User table is empty");
+        if (user.isPresent()) {
+            if (user.get().getPassword().equals(password)) {
+                return "Login Successful";
+            } else {
+                return "Wrong Password";
+            }
+        } else {
+            return "User Not Found";
         }
-
-        if(!userRepository.existsById(id)){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
-        }
-
-        userRepository.deleteById(id);
-        return "User Deleted Successfully";
     }
 }
+

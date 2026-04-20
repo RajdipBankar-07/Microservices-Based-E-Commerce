@@ -1,66 +1,66 @@
 package com.rajdip.ecommerce.model;
-import jakarta.validation.constraints.*;
 
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "users") // explicitly name the table to avoid conflicts
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Name is required")
+    @Column(nullable = false)
     private String name;
 
-    @Min(value = 18, message = "Age must be 18+")
-    private int age;
-
-    @Email(message = "Invalid email format")
-    @NotBlank(message = "Email is required")
+    @Column(nullable = false, unique = true) // unique = no two users with same email
     private String email;
+
+    @Column(nullable = false)
     private String password;
 
-    // GETTERS & SETTERS
+    @Column(nullable = false)
+    private String role = "CUSTOMER"; // default role for every new user
 
-
-    public int getAge() {
-        return age;
-    }
-
-    public void setAge(int age) {
-        this.age = age;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
+    // ── Getters ───────────────────────────────────────────────────────────────
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getEmail() {
+        return email;
     }
 
     public String getPassword() {
         return password;
     }
 
+    public String getRole() {
+        return role;
+    }
+
+    // ── Setters ───────────────────────────────────────────────────────────────
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }
