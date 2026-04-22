@@ -15,6 +15,7 @@ public class Order {
     private Long userId;
     private Long productId;
     private int quantity;
+    private String status;
 
     public Long getId() {
         return id;
@@ -38,6 +39,14 @@ public class Order {
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Long getUserId() {
