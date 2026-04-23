@@ -1,5 +1,6 @@
 package com.rajdip.ecommerce.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -12,8 +13,15 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
-    private Long productId;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"password"})
+    private User user;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
     private int quantity;
     private String status;
 
@@ -25,12 +33,20 @@ public class Order {
         this.id = id;
     }
 
-    public Long getProductId() {
-        return productId;
+    public User getUser() {
+        return user;
     }
 
-    public void setProductId(Long productId) {
-        this.productId = productId;
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
     }
 
     public int getQuantity() {
@@ -49,11 +65,4 @@ public class Order {
         this.status = status;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
 }

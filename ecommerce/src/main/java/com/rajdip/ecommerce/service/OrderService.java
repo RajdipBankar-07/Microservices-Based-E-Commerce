@@ -1,8 +1,10 @@
 package com.rajdip.ecommerce.service;
 
 import com.rajdip.ecommerce.dto.ApiResponse;
+import com.rajdip.ecommerce.dto.OrderRequest;
 import com.rajdip.ecommerce.model.Order;
 import com.rajdip.ecommerce.model.Product;
+import com.rajdip.ecommerce.model.User;
 import com.rajdip.ecommerce.repository.OrderRepository;
 import com.rajdip.ecommerce.repository.ProductRepository;
 import com.rajdip.ecommerce.repository.UserRepository;
@@ -28,27 +30,33 @@ public class OrderService {
     }
 
     @Transactional
-    public ApiResponse<Order> placeOrder(Order order) {
-        if (order.getQuantity() <= 0) {
+    public ApiResponse<Order> placeOrder(OrderRequest request) {
+        if (request.getQuantity() <= 0) {
             return new ApiResponse<>("Quantity must be greater than 0", null);
         }
 
-        if (!userRepository.existsById(order.getUserId())) {
+        Optional<User> userOptional = userRepository.findById(request.getUserId());
+        if (userOptional.isEmpty()) {
             return new ApiResponse<>("User not found", null);
         }
 
-        Optional<Product> productOptional = productRepository.findById(order.getProductId());
+        Optional<Product> productOptional = productRepository.findById(request.getProductId());
         if (productOptional.isEmpty()) {
             return new ApiResponse<>("Product not found", null);
         }
 
         Product product = productOptional.get();
-        if (product.getQuantity() < order.getQuantity()) {
+        if (product.getQuantity() < request.getQuantity()) {
             return new ApiResponse<>("Insufficient stock", null);
         }
 
-        product.setQuantity(product.getQuantity() - order.getQuantity());
+        product.setQuantity(product.getQuantity() - request.getQuantity());
         productRepository.save(product);
+
+        Order order = new Order();
+        order.setUser(userOptional.get());
+        order.setProduct(product);
+        order.setQuantity(request.getQuantity());
         order.setStatus("PLACED");
 
         Order savedOrder = orderRepository.save(order);
@@ -60,7 +68,7 @@ public class OrderService {
     }
 
     public List<Order> getByUserId(Long userId) {
-        return orderRepository.findByUserId(userId);
+        return orderRepository.findByUser_Id(userId);
     }
 
     @Transactional
@@ -122,7 +130,7 @@ public class OrderService {
     }
 
     private void restoreStock(Order order) {
-        Optional<Product> productOptional = productRepository.findById(order.getProductId());
+        Optional<Product> productOptional = productRepository.findById(order.getProduct().getId());
         if (productOptional.isPresent()) {
             Product product = productOptional.get();
             product.setQuantity(product.getQuantity() + order.getQuantity());

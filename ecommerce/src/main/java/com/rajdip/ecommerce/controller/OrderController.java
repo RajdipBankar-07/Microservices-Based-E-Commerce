@@ -1,6 +1,7 @@
 package com.rajdip.ecommerce.controller;
 
 import com.rajdip.ecommerce.dto.ApiResponse;
+import com.rajdip.ecommerce.dto.OrderRequest;
 import com.rajdip.ecommerce.model.Order;
 import com.rajdip.ecommerce.service.OrderService;
 import org.springframework.http.ResponseEntity;
@@ -19,11 +20,12 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Order>> create(@RequestBody Order order) {
-        ApiResponse<Order> response = service.placeOrder(order);
+    public ResponseEntity<ApiResponse<Order>> create(@RequestBody OrderRequest request) {
+        ApiResponse<Order> response = service.placeOrder(request);
 
         if (response.getData() == null) {
-            if ("Insufficient stock".equals(response.getMessage())) {
+            if ("Insufficient stock".equals(response.getMessage())
+                    || "Quantity must be greater than 0".equals(response.getMessage())) {
                 return ResponseEntity.status(400).body(response);
             }
             return ResponseEntity.status(404).body(response);
