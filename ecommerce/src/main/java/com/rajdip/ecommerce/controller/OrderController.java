@@ -4,6 +4,7 @@ import com.rajdip.ecommerce.dto.ApiResponse;
 import com.rajdip.ecommerce.dto.OrderRequest;
 import com.rajdip.ecommerce.model.Order;
 import com.rajdip.ecommerce.service.OrderService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +21,7 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Order>> create(@RequestBody OrderRequest request) {
+    public ResponseEntity<ApiResponse<Order>> create(@Valid @RequestBody OrderRequest request) {
         ApiResponse<Order> response = service.placeOrder(request);
 
         if (response.getData() == null) {

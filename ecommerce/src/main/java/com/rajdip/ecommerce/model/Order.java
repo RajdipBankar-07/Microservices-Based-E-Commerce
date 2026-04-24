@@ -2,6 +2,7 @@ package com.rajdip.ecommerce.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import lombok.Data;
 
 @Entity
@@ -22,6 +23,7 @@ public class Order {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @Min(value = 1, message = "Quantity must be at least 1")
     private int quantity;
     private String status;
 
@@ -64,5 +66,4 @@ public class Order {
     public void setStatus(String status) {
         this.status = status;
     }
-
 }

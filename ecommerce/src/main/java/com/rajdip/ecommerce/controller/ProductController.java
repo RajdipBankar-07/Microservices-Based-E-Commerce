@@ -2,6 +2,7 @@ package com.rajdip.ecommerce.controller;
 
 import com.rajdip.ecommerce.model.Product;
 import com.rajdip.ecommerce.service.ProductService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,7 @@ public class ProductController {
     }
 
     @PostMapping
-    public Product create(@RequestBody Product product) {
+    public Product create(@Valid @RequestBody Product product) {
         return service.save(product);
     }
 
@@ -37,7 +38,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Product> update(@PathVariable Long id, @RequestBody Product product) {
+    public ResponseEntity<Product> update(@PathVariable Long id, @Valid @RequestBody Product product) {
         Optional<Product> updated = service.update(id, product);
 
         return updated.map(ResponseEntity::ok)

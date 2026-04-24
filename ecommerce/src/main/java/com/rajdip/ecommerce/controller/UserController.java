@@ -5,6 +5,7 @@ import com.rajdip.ecommerce.dto.LoginRequest;
 import com.rajdip.ecommerce.dto.UserResponseDTO;
 import com.rajdip.ecommerce.model.User;
 import com.rajdip.ecommerce.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,14 +20,14 @@ public class UserController {
 
     // Register API
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody User user) {
+    public ResponseEntity<User> register(@Valid @RequestBody User user) {
         User savedUser = service.register(user);
         return ResponseEntity.ok(savedUser);
     }
 
     // Login API
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<String>> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse<String>> login(@Valid @RequestBody LoginRequest loginRequest) {
 
         ApiResponse<String> result = service.login(loginRequest.getEmail(), loginRequest.getPassword());
 

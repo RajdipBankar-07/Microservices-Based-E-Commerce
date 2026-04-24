@@ -1,6 +1,9 @@
 package com.rajdip.ecommerce.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "users") // explicitly name the table to avoid conflicts
@@ -11,12 +14,17 @@ public class User {
     private Long id;
 
     @Column(nullable = false)
+    @NotBlank(message = "Name is required")
     private String name;
 
     @Column(nullable = false, unique = true) // unique = no two users with same email
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
     private String email;
 
     @Column(nullable = false)
+    @NotBlank(message = "Password is required")
+    @Size(min = 4, message = "Password must be at least 4 characters")
     private String password;
 
     @Column(nullable = false)
