@@ -1,9 +1,13 @@
 package com.rajdip.ecommerce.controller;
 
+import com.rajdip.ecommerce.dto.ApiResponse;
+import com.rajdip.ecommerce.dto.LoginRequest;
+import com.rajdip.ecommerce.dto.UserResponseDTO;
 import com.rajdip.ecommerce.model.User;
 import com.rajdip.ecommerce.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,17 +26,24 @@ public class UserController {
 
     // Login API
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User user) {
+    public ResponseEntity<ApiResponse<String>> login(@RequestBody LoginRequest loginRequest) {
 
-        String result = service.login(user.getEmail(), user.getPassword());
+        ApiResponse<String> result = service.login(loginRequest.getEmail(), loginRequest.getPassword());
 
-        if (result.equals("Login Successful")) {
+        if ("Login Successful".equals(result.getMessage())) {
             return ResponseEntity.ok(result); // 200 OK
-        } else if (result.equals("Wrong Password")) {
+        } else if ("Wrong Password".equals(result.getMessage())) {
             return ResponseEntity.status(401).body(result); // 401 Unauthorized
         } else {
             return ResponseEntity.status(404).body(result); // 404 Not Found
         }
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> getCurrentUser(Authentication authentication) {
+        return service.getCurrentUser(authentication.getName())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(404).build());
+    }
 }
-
+
