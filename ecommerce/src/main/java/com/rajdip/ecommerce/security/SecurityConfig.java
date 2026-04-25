@@ -3,6 +3,7 @@ package com.rajdip.ecommerce.security;
 import com.rajdip.ecommerce.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -31,29 +32,45 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/users/register", "/users/login").permitAll()
-                    .requestMatchers("/users/me").authenticated()
-                        .requestMatchers("/products/**", "/orders/**").authenticated()
+                        .requestMatchers("/users/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/products/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/products/**").hasRole("ADMIN")
+                        .requestMatchers("/orders/**").authenticated()
                         .anyRequest().permitAll()
                 )
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-        @Bean
-        public UserDetailsService userDetailsService(UserRepository userRepository) {
+    @Bean
+    public UserDetailsService userDetailsService(UserRepository userRepository) {
         return username -> userRepository.findByEmail(username)
-            .map(user -> User.withUsername(user.getEmail())
-                .password(user.getPassword())
-                .roles(user.getRole())
-                .build())
-            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        }
+                .map(user -> User.withUsername(user.getEmail())
+                        .password(user.getPassword())
+                        .roles(normalizeRole(user.getRole()))
+                        .build())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    private String normalizeRole(String role) {
+        if (role == null || role.isBlank()) {
+            return "CUSTOMER";
+        }
+
+        String normalized = role.trim().toUpperCase();
+        if (normalized.startsWith("ROLE_")) {
+            normalized = normalized.substring(5);
+        }
+        return normalized;
     }
 }

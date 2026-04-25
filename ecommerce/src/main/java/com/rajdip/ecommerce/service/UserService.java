@@ -25,6 +25,8 @@ public class UserService {
 
     // Register User
     public User register(User user) {
+        user.setEmail(user.getEmail().trim().toLowerCase());
+        user.setRole(normalizeRole(user.getRole()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User saved = repo.save(user);
         saved.setPassword(null);
@@ -45,7 +47,7 @@ public class UserService {
             }
 
             if (passwordMatches) {
-                String token = jwtService.generateToken(user.get().getEmail(), user.get().getRole());
+                String token = jwtService.generateToken(user.get().getEmail(), normalizeRole(user.get().getRole()));
                 return new ApiResponse<>("Login Successful", token);
             } else {
                 return new ApiResponse<>("Wrong Password", null);
@@ -58,6 +60,18 @@ public class UserService {
     public Optional<UserResponseDTO> getCurrentUser(String email) {
         return repo.findByEmail(email)
                 .map(user -> new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole()));
+    }
+
+    private String normalizeRole(String role) {
+        if (role == null || role.isBlank()) {
+            return "CUSTOMER";
+        }
+
+        String normalized = role.trim().toUpperCase();
+        if (normalized.startsWith("ROLE_")) {
+            normalized = normalized.substring(5);
+        }
+        return normalized;
     }
 }
 
