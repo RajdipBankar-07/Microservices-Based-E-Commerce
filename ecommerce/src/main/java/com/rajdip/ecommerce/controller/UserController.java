@@ -58,5 +58,16 @@ public class UserController {
 
         return ResponseEntity.status(401).body(result);
     }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<ApiResponse<String>> refreshToken(Authentication authentication) {
+        ApiResponse<String> result = service.refreshToken(authentication.getName());
+
+        if ("Token refreshed successfully".equals(result.getMessage())) {
+            return ResponseEntity.ok(result);
+        }
+
+        return ResponseEntity.status(404).body(result);
+    }
 }
 

@@ -83,6 +83,17 @@ public class UserService {
         return new ApiResponse<>("Token is valid", info);
     }
 
+    public ApiResponse<String> refreshToken(String email) {
+        Optional<User> user = repo.findByEmail(email);
+
+        if (user.isEmpty()) {
+            return new ApiResponse<>("User not found", null);
+        }
+
+        String token = jwtService.generateToken(user.get().getEmail(), normalizeRole(user.get().getRole()));
+        return new ApiResponse<>("Token refreshed successfully", token);
+    }
+
     private String normalizeRole(String role) {
         if (role == null || role.isBlank()) {
             return "CUSTOMER";
