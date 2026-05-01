@@ -2,6 +2,7 @@ package com.rajdip.ecommerce.controller;
 
 import com.rajdip.ecommerce.dto.ApiResponse;
 import com.rajdip.ecommerce.dto.LoginRequest;
+import com.rajdip.ecommerce.dto.JwtInfoDTO;
 import com.rajdip.ecommerce.dto.UserResponseDTO;
 import com.rajdip.ecommerce.model.User;
 import com.rajdip.ecommerce.service.UserService;
@@ -45,6 +46,17 @@ public class UserController {
         return service.getCurrentUser(authentication.getName())
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(404).build());
+    }
+
+    @GetMapping("/validate-token")
+    public ResponseEntity<ApiResponse<JwtInfoDTO>> validateToken(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        ApiResponse<JwtInfoDTO> result = service.validateToken(authorization);
+
+        if ("Token is valid".equals(result.getMessage())) {
+            return ResponseEntity.ok(result);
+        }
+
+        return ResponseEntity.status(401).body(result);
     }
 }
 

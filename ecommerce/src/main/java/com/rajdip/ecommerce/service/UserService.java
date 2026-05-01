@@ -1,6 +1,7 @@
 package com.rajdip.ecommerce.service;
 
 import com.rajdip.ecommerce.dto.ApiResponse;
+import com.rajdip.ecommerce.dto.JwtInfoDTO;
 import com.rajdip.ecommerce.dto.UserResponseDTO;
 import com.rajdip.ecommerce.model.User;
 import com.rajdip.ecommerce.repository.UserRepository;
@@ -60,6 +61,26 @@ public class UserService {
     public Optional<UserResponseDTO> getCurrentUser(String email) {
         return repo.findByEmail(email)
                 .map(user -> new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole()));
+    }
+
+    public ApiResponse<JwtInfoDTO> validateToken(String token) {
+        if (token == null || token.isBlank()) {
+            return new ApiResponse<>("Token is missing", null);
+        }
+
+        String rawToken = token.startsWith("Bearer ") ? token.substring(7).trim() : token.trim();
+
+        if (!jwtService.isTokenValid(rawToken)) {
+            return new ApiResponse<>("Token is invalid or expired", null);
+        }
+
+        JwtInfoDTO info = new JwtInfoDTO(
+                jwtService.extractUsername(rawToken),
+                jwtService.extractRole(rawToken),
+                jwtService.extractExpiration(rawToken)
+        );
+
+        return new ApiResponse<>("Token is valid", info);
     }
 
     private String normalizeRole(String role) {
