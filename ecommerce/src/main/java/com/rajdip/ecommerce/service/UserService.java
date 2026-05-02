@@ -94,6 +94,21 @@ public class UserService {
         return new ApiResponse<>("Token refreshed successfully", token);
     }
 
+    public ApiResponse<String> logout(String token) {
+        if (token == null || token.isBlank()) {
+            return new ApiResponse<>("Token is missing", null);
+        }
+
+        String rawToken = token.startsWith("Bearer ") ? token.substring(7).trim() : token.trim();
+
+        if (jwtService.isTokenBlacklisted(rawToken)) {
+            return new ApiResponse<>("Token already logged out", null);
+        }
+
+        jwtService.blacklistToken(rawToken);
+        return new ApiResponse<>("Logout successful", null);
+    }
+
     private String normalizeRole(String role) {
         if (role == null || role.isBlank()) {
             return "CUSTOMER";

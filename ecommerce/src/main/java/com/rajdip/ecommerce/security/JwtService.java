@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 public class JwtService {
@@ -19,6 +21,9 @@ public class JwtService {
 
     @Value("${jwt.expiration-ms}")
     private long jwtExpirationMs;
+
+    // Token blacklist for logout functionality
+    private final Set<String> tokenBlacklist = new HashSet<>();
 
     public String generateToken(String email, String role) {
         Date now = new Date();
@@ -44,11 +49,24 @@ public class JwtService {
 
     public boolean isTokenValid(String token) {
         try {
+            // Check if token is blacklisted
+            if (tokenBlacklist.contains(token)) {
+                return false;
+            }
+
             Claims claims = extractAllClaims(token);
             return claims.getExpiration().after(new Date());
         } catch (Exception ex) {
             return false;
         }
+    }
+
+    public void blacklistToken(String token) {
+        tokenBlacklist.add(token);
+    }
+
+    public boolean isTokenBlacklisted(String token) {
+        return tokenBlacklist.contains(token);
     }
 
     public Date extractExpiration(String token) {
