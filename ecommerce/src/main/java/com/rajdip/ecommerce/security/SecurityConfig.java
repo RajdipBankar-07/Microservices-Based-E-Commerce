@@ -43,6 +43,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/products/**").hasRole("ADMIN")
                         .requestMatchers("/orders/**").authenticated()
                         .requestMatchers("/cart/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/payments").hasRole("ADMIN")
+                        .requestMatchers("/payments/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .formLogin(form -> form.disable())
