@@ -40,6 +40,11 @@ public class ProductService {
         product.setPrice(updatedProduct.getPrice());
         product.setQuantity(updatedProduct.getQuantity());
 
+        // Preserve or update category if provided
+        if (updatedProduct.getCategory() != null) {
+            product.setCategory(updatedProduct.getCategory());
+        }
+
         return Optional.of(repo.save(product));
     }
 
@@ -51,4 +56,14 @@ public class ProductService {
         repo.deleteById(id);
         return true;
     }
-}
+
+    // ── Category-based queries ─────────────────────────────────────────────────
+
+    public List<Product> getByCategory(Long categoryId) {
+        return repo.findByCategory_Id(categoryId);
+    }
+
+    public List<Product> getUncategorized() {
+        return repo.findByCategoryIsNull();
+    }
+}

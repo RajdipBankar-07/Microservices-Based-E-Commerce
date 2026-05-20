@@ -1,5 +1,6 @@
 package com.rajdip.ecommerce.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -22,6 +23,12 @@ public class Product {
 
     @PositiveOrZero(message = "Quantity cannot be negative")
     private int quantity;
+
+    // Category is optional — existing products without a category remain valid
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "category_id", nullable = true)
+    @JsonIgnoreProperties({"createdAt", "updatedAt"})
+    private Category category;
 
     public Long getId() {
         return id;
@@ -53,5 +60,13 @@ public class Product {
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 }
