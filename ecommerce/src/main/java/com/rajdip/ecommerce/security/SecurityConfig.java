@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers("/reviews/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .formLogin(form -> form.disable())
