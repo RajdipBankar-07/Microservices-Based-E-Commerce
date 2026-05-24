@@ -24,6 +24,9 @@ public class UserService {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private EmailService emailService;
+
     // Register User
     public User register(User user) {
         user.setEmail(user.getEmail().trim().toLowerCase());
@@ -31,6 +34,8 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User saved = repo.save(user);
         saved.setPassword(null);
+        // Day 6: send welcome email asynchronously
+        emailService.sendWelcomeEmail(saved.getEmail(), saved.getName());
         return saved;
     }
 

@@ -20,13 +20,16 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final EmailService emailService;
 
     public OrderService(OrderRepository orderRepository,
                         UserRepository userRepository,
-                        ProductRepository productRepository) {
+                        ProductRepository productRepository,
+                        EmailService emailService) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -60,6 +63,16 @@ public class OrderService {
         order.setStatus("PLACED");
 
         Order savedOrder = orderRepository.save(order);
+        // Day 6: notify buyer
+        double total = product.getPrice() * request.getQuantity();
+        emailService.sendOrderPlacedEmail(
+            savedOrder.getUser().getEmail(),
+            savedOrder.getUser().getName(),
+            savedOrder.getId(),
+            product.getName(),
+            request.getQuantity(),
+            total
+        );
         return new ApiResponse<>("Order placed successfully", savedOrder);
     }
 
@@ -89,6 +102,13 @@ public class OrderService {
         restoreStock(order);
         order.setStatus("CANCELLED");
         Order saved = orderRepository.save(order);
+        // Day 6: notify buyer
+        emailService.sendOrderCancelledEmail(
+            saved.getUser().getEmail(),
+            saved.getUser().getName(),
+            saved.getId(),
+            saved.getProduct().getName()
+        );
         return new ApiResponse<>("Order cancelled and stock restored", saved);
     }
 
@@ -110,6 +130,15 @@ public class OrderService {
         restoreStock(order);
         order.setStatus("REFUNDED");
         Order saved = orderRepository.save(order);
+        // Day 6: notify buyer
+        double refundAmount = saved.getProduct().getPrice() * saved.getQuantity();
+        emailService.sendOrderRefundedEmail(
+            saved.getUser().getEmail(),
+            saved.getUser().getName(),
+            saved.getId(),
+            saved.getProduct().getName(),
+            refundAmount
+        );
         return new ApiResponse<>("Order refunded and stock restored", saved);
     }
 

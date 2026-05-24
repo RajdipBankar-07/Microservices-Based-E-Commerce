@@ -26,13 +26,16 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository   orderRepository;
     private final OrderService      orderService;
+    private final EmailService      emailService;
 
     public PaymentService(PaymentRepository paymentRepository,
                           OrderRepository orderRepository,
-                          OrderService orderService) {
+                          OrderService orderService,
+                          EmailService emailService) {
         this.paymentRepository = paymentRepository;
         this.orderRepository   = orderRepository;
         this.orderService      = orderService;
+        this.emailService      = emailService;
     }
 
     // ── 1. Initiate Payment ────────────────────────────────────────────────────
@@ -130,8 +133,19 @@ public class PaymentService {
 
         payment.setStatus(newStatus);
         payment.setUpdatedAt(LocalDateTime.now());
-
-        return new ApiResponse<>("Payment status updated to " + newStatus, paymentRepository.save(payment));
+        Payment saved = paymentRepository.save(payment);
+        // Day 6: notify user of payment outcome
+        String userEmail = saved.getUser().getEmail();
+        String userName  = saved.getUser().getName();
+        Long   orderId   = saved.getOrder().getId();
+        String txnId     = saved.getTransactionId();
+        String method    = saved.getPaymentMethod();
+        if ("SUCCESS".equals(newStatus)) {
+            emailService.sendPaymentSuccessEmail(userEmail, userName, orderId, txnId, method, saved.getAmount());
+        } else {
+            emailService.sendPaymentFailedEmail(userEmail, userName, orderId, txnId, method);
+        }
+        return new ApiResponse<>("Payment status updated to " + newStatus, saved);
     }
 
     // ── 3. Get Payment by Order ID ─────────────────────────────────────────────
@@ -193,8 +207,16 @@ public class PaymentService {
 
         payment.setStatus("REFUNDED");
         payment.setUpdatedAt(LocalDateTime.now());
-
-        return new ApiResponse<>("Payment refunded successfully. Stock restored.", paymentRepository.save(payment));
+        Payment saved = paymentRepository.save(payment);
+        // Day 6: notify user of payment refund
+        emailService.sendPaymentRefundedEmail(
+            saved.getUser().getEmail(),
+            saved.getUser().getName(),
+            saved.getOrder().getId(),
+            saved.getTransactionId(),
+            saved.getAmount()
+        );
+        return new ApiResponse<>("Payment refunded successfully. Stock restored.", saved);
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────
