@@ -1,6 +1,8 @@
 package com.rajdip.ecommerce.repository;
 
 import com.rajdip.ecommerce.model.Payment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -23,6 +25,16 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.status = 'SUCCESS'")
     double sumSuccessPayments();
 
-    // Count payments grouped by status
     long countByStatus(String status);
+
+    // ── Day 8: Paginated queries ───────────────────────────────────────────────
+
+    // User's payment history paginated
+    Page<Payment> findByUser_Id(Long userId, Pageable pageable);
+
+    // All payments paginated (admin)
+    Page<Payment> findAll(Pageable pageable);
+
+    // Payments by status paginated
+    Page<Payment> findByStatus(String status, Pageable pageable);
 }

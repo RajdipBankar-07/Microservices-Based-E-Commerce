@@ -1,6 +1,8 @@
 package com.rajdip.ecommerce.repository;
 
 import com.rajdip.ecommerce.model.Review;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,10 +31,19 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // ── Dashboard queries ──────────────────────────────────────────────────────
 
-    // Overall average rating across all products
     @Query("SELECT COALESCE(AVG(r.rating), 0) FROM Review r")
     double findOverallAverageRating();
 
-    // Count verified purchase reviews
     long countByVerifiedPurchaseTrue();
+
+    // ── Day 8: Paginated queries ───────────────────────────────────────────────
+
+    // All reviews for a product paginated (sortable by rating or id)
+    Page<Review> findByProduct_Id(Long productId, Pageable pageable);
+
+    // All reviews by a user paginated
+    Page<Review> findByUser_Id(Long userId, Pageable pageable);
+
+    // Verified reviews for a product paginated
+    Page<Review> findByProduct_IdAndVerifiedPurchaseTrue(Long productId, Pageable pageable);
 }

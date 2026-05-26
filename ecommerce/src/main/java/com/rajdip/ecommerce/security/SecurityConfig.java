@@ -53,6 +53,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/categories/**").hasRole("ADMIN")
                         .requestMatchers("/reviews/**").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // Day 8: Paginated endpoints
+                        .requestMatchers(HttpMethod.GET, "/paginated/orders").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/paginated/payments").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/paginated/payments/status/**").hasRole("ADMIN")
+                        .requestMatchers("/paginated/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .formLogin(form -> form.disable())
