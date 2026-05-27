@@ -53,6 +53,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/categories/**").hasRole("ADMIN")
                         .requestMatchers("/reviews/**").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // Day 9: User Addresses — authenticated users only
+                        .requestMatchers("/users/*/addresses/**").authenticated()
                         // Day 8: Paginated endpoints
                         .requestMatchers(HttpMethod.GET, "/paginated/orders").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/paginated/payments").hasRole("ADMIN")
