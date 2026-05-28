@@ -10,8 +10,11 @@ import com.rajdip.ecommerce.repository.OrderRepository;
 import com.rajdip.ecommerce.repository.ProductRepository;
 import com.rajdip.ecommerce.repository.ReviewRepository;
 import com.rajdip.ecommerce.repository.UserRepository;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,15 +27,21 @@ public class ReviewService {
     private final UserRepository    userRepository;
     private final ProductRepository productRepository;
     private final OrderRepository   orderRepository;
+    private final MongoTemplate     mongoTemplate;
+    private final SequenceGeneratorService sequenceService;
 
     public ReviewService(ReviewRepository reviewRepository,
                          UserRepository userRepository,
                          ProductRepository productRepository,
-                         OrderRepository orderRepository) {
+                         OrderRepository orderRepository,
+                         MongoTemplate mongoTemplate,
+                         SequenceGeneratorService sequenceService) {
         this.reviewRepository  = reviewRepository;
         this.userRepository    = userRepository;
         this.productRepository = productRepository;
         this.orderRepository   = orderRepository;
+        this.mongoTemplate     = mongoTemplate;
+        this.sequenceService   = sequenceService;
     }
 
     // ── 1. Create Review ───────────────────────────────────────────────────────
@@ -45,7 +54,6 @@ public class ReviewService {
      *  - One review per user per product (unique constraint enforced here before DB).
      *  - verifiedPurchase = true if the user has ever ordered this product.
      */
-    @Transactional
     public ApiResponse<Review> create(ReviewRequest request) {
 
         Optional<User> userOpt = userRepository.findById(request.getUserId());
@@ -68,6 +76,7 @@ public class ReviewService {
                 request.getUserId(), request.getProductId());
 
         Review review = new Review();
+        review.setId(sequenceService.nextId("reviews"));
         review.setUser(userOpt.get());
         review.setProduct(productOpt.get());
         review.setRating(request.getRating());
@@ -84,7 +93,6 @@ public class ReviewService {
     /**
      * Only the original reviewer can update their review.
      */
-    @Transactional
     public ApiResponse<Review> update(Long reviewId, Long requestingUserId, ReviewRequest request) {
 
         Optional<Review> reviewOpt = reviewRepository.findById(reviewId);
@@ -112,7 +120,6 @@ public class ReviewService {
      * Reviewer or ADMIN can delete a review.
      * isAdmin flag is passed from controller after checking Spring Security role.
      */
-    @Transactional
     public ApiResponse<String> delete(Long reviewId, Long requestingUserId, boolean isAdmin) {
 
         Optional<Review> reviewOpt = reviewRepository.findById(reviewId);
@@ -141,10 +148,9 @@ public class ReviewService {
             return new ApiResponse<>("Product not found", null);
         }
 
-        List<Review> reviews   = reviewRepository.findByProduct_Id(productId);
-        Double avgRaw          = reviewRepository.findAverageRatingByProductId(productId);
-        double avg             = (avgRaw != null) ? avgRaw : 0.0;
-        long   total           = reviewRepository.countByProduct_Id(productId);
+        List<Review> reviews = reviewRepository.findByProduct_Id(productId);
+        double avg  = reviews.stream().mapToInt(Review::getRating).average().orElse(0.0);
+        long   total = reviews.size();
 
         // Per-star counts
         long s1 = reviews.stream().filter(r -> r.getRating() == 1).count();
@@ -153,9 +159,7 @@ public class ReviewService {
         long s4 = reviews.stream().filter(r -> r.getRating() == 4).count();
         long s5 = reviews.stream().filter(r -> r.getRating() == 5).count();
 
-        ProductReviewSummaryDTO summary =
-                new ProductReviewSummaryDTO(reviews, avg, total, s1, s2, s3, s4, s5);
-
+        ProductReviewSummaryDTO summary = new ProductReviewSummaryDTO(reviews, avg, total, s1, s2, s3, s4, s5);
         return new ApiResponse<>("Reviews retrieved", summary);
     }
 

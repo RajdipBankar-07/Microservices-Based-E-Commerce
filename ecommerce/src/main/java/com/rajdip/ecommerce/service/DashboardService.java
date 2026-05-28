@@ -101,14 +101,23 @@ public class DashboardService {
         long   success  = paymentRepository.countByStatus("SUCCESS");
         long   failed   = paymentRepository.countByStatus("FAILED");
         long   refunded = paymentRepository.countByStatus("REFUNDED");
-        double revenue  = paymentRepository.sumSuccessPayments();
+        
+        // Calculate success payment revenue
+        double revenue = paymentRepository.findAll().stream()
+                .filter(p -> "SUCCESS".equalsIgnoreCase(p.getStatus()))
+                .mapToDouble(p -> p.getAmount())
+                .sum();
+                
         return new PaymentStatsDTO(total, pending, success, failed, refunded, revenue);
     }
 
     /** Platform-wide review stats */
     public ReviewStatsDTO getReviewStats() {
         long   total    = reviewRepository.count();
-        double avgRaw   = reviewRepository.findOverallAverageRating();
+        double avgRaw   = reviewRepository.findAll().stream()
+                .mapToInt(r -> r.getRating())
+                .average()
+                .orElse(0.0);
         long   verified = reviewRepository.countByVerifiedPurchaseTrue();
         return new ReviewStatsDTO(total, avgRaw, verified);
     }
@@ -120,43 +129,55 @@ public class DashboardService {
 
     /** Products completely out of stock */
     public List<Product> getOutOfStockProducts() {
-        return productRepository.findByQuantity(0);
+        return productRepository.findOutOfStockProducts();
     }
 
     /**
      * Top 5 best-selling products.
-     * Returns list of maps: [{productId, productName, orderCount}]
      */
     public List<Map<String, Object>> getTopSellingProducts() {
-        List<Object[]> raw = orderRepository.findTopOrderedProducts();
-
+        List<Order> allOrders = orderRepository.findAll();
+        
+        // Count orders per product
+        Map<Long, Long> counts = new HashMap<>();
+        for (Order o : allOrders) {
+            if (o.getProduct() != null) {
+                Long pId = o.getProduct().getId();
+                counts.put(pId, counts.getOrDefault(pId, 0L) + 1);
+            }
+        }
+        
+        // Sort descending by count
+        List<Map.Entry<Long, Long>> sorted = new ArrayList<>(counts.entrySet());
+        sorted.sort((a, b) -> b.getValue().compareTo(a.getValue()));
+        
         List<Map<String, Object>> result = new ArrayList<>();
-        int limit = Math.min(raw.size(), TOP_PRODUCTS_COUNT);
-
+        int limit = Math.min(sorted.size(), TOP_PRODUCTS_COUNT);
+        
         for (int i = 0; i < limit; i++) {
-            Object[] row       = raw.get(i);
-            Long productId     = (Long) row[0];
-            Long orderCount    = (Long) row[1];
-
-            Map<String, Object> entry = new LinkedHashMap<>();
-            entry.put("rank",       i + 1);
-            entry.put("productId",  productId);
-            entry.put("orderCount", orderCount);
-
-            // Enrich with product name
+            Map.Entry<Long, Long> entry = sorted.get(i);
+            Long productId  = entry.getKey();
+            Long orderCount = entry.getValue();
+            
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("rank",       i + 1);
+            map.put("productId",  productId);
+            map.put("orderCount", orderCount);
+            
             productRepository.findById(productId).ifPresent(p -> {
-                entry.put("productName",  p.getName());
-                entry.put("productPrice", p.getPrice());
-                entry.put("stockLeft",    p.getQuantity());
+                map.put("productName",  p.getName());
+                map.put("productPrice", p.getPrice());
+                map.put("stockLeft",    p.getQuantity());
             });
-
-            result.add(entry);
+            
+            result.add(map);
         }
         return result;
     }
 
     /** Last RECENT_ORDERS_COUNT orders sorted by newest first */
     public List<Order> getRecentOrders() {
-        return orderRepository.findRecentOrders(PageRequest.of(0, RECENT_ORDERS_COUNT));
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id");
+        return orderRepository.findAll(PageRequest.of(0, RECENT_ORDERS_COUNT, sort)).getContent();
     }
 }

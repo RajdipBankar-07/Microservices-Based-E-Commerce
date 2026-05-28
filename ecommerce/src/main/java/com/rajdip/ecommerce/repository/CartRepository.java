@@ -1,12 +1,12 @@
 package com.rajdip.ecommerce.repository;
 
 import com.rajdip.ecommerce.model.CartItem;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface CartRepository extends JpaRepository<CartItem, Long> {
+public interface CartRepository extends MongoRepository<CartItem, Long> {
 
     // All items in a user's cart
     List<CartItem> findByUser_Id(Long userId);

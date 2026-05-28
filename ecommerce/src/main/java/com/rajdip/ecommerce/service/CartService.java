@@ -10,7 +10,6 @@ import com.rajdip.ecommerce.repository.CartRepository;
 import com.rajdip.ecommerce.repository.ProductRepository;
 import com.rajdip.ecommerce.repository.UserRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,13 +20,16 @@ public class CartService {
     private final CartRepository cartRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final SequenceGeneratorService sequenceService;
 
     public CartService(CartRepository cartRepository,
                        UserRepository userRepository,
-                       ProductRepository productRepository) {
+                       ProductRepository productRepository,
+                       SequenceGeneratorService sequenceService) {
         this.cartRepository = cartRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.sequenceService = sequenceService;
     }
 
     // ── Add / Update item ──────────────────────────────────────────────────────
@@ -36,7 +38,6 @@ public class CartService {
      * Add a product to the cart.
      * If the product is already in the cart, its quantity is INCREASED by the requested amount.
      */
-    @Transactional
     public ApiResponse<CartItem> addToCart(CartRequest request) {
         Optional<User> userOpt = userRepository.findById(request.getUserId());
         if (userOpt.isEmpty()) {
@@ -69,6 +70,7 @@ public class CartService {
                 return new ApiResponse<>("Insufficient stock. Available: " + product.getQuantity(), null);
             }
             cartItem = new CartItem();
+            cartItem.setId(sequenceService.nextId("cart_items"));
             cartItem.setUser(userOpt.get());
             cartItem.setProduct(product);
             cartItem.setQuantity(request.getQuantity());
@@ -102,7 +104,6 @@ public class CartService {
     /**
      * Set the quantity of a specific cart item to the exact value provided.
      */
-    @Transactional
     public ApiResponse<CartItem> updateQuantity(Long cartItemId, int newQuantity) {
         if (newQuantity < 1) {
             return new ApiResponse<>("Quantity must be at least 1", null);
@@ -124,7 +125,6 @@ public class CartService {
 
     // ── Remove one item ────────────────────────────────────────────────────────
 
-    @Transactional
     public ApiResponse<String> removeItem(Long cartItemId) {
         if (!cartRepository.existsById(cartItemId)) {
             return new ApiResponse<>("Cart item not found", null);
@@ -135,7 +135,6 @@ public class CartService {
 
     // ── Clear entire cart ──────────────────────────────────────────────────────
 
-    @Transactional
     public ApiResponse<String> clearCart(Long userId) {
         if (!userRepository.existsById(userId)) {
             return new ApiResponse<>("User not found", null);
@@ -150,7 +149,6 @@ public class CartService {
      * Checkout converts every cart item into a real Order (delegates to OrderService)
      * and then clears the cart.
      */
-    @Transactional
     public ApiResponse<String> checkout(Long userId, OrderService orderService) {
         if (!userRepository.existsById(userId)) {
             return new ApiResponse<>("User not found", null);

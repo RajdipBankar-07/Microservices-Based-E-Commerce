@@ -55,6 +55,8 @@ public class SecurityConfig {
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         // Day 9: User Addresses — authenticated users only
                         .requestMatchers("/users/*/addresses/**").authenticated()
+                        // Day 10: Coupon endpoints — user-facing, authenticated
+                        .requestMatchers("/coupons/**").authenticated()
                         // Day 8: Paginated endpoints
                         .requestMatchers(HttpMethod.GET, "/paginated/orders").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/paginated/payments").hasRole("ADMIN")

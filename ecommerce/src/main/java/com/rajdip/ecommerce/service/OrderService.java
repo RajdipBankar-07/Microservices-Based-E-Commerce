@@ -21,18 +21,20 @@ public class OrderService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final EmailService emailService;
+    private final SequenceGeneratorService sequenceService;
 
     public OrderService(OrderRepository orderRepository,
                         UserRepository userRepository,
                         ProductRepository productRepository,
-                        EmailService emailService) {
+                        EmailService emailService,
+                        SequenceGeneratorService sequenceService) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.emailService = emailService;
+        this.sequenceService = sequenceService;
     }
 
-    @Transactional
     public ApiResponse<Order> placeOrder(OrderRequest request) {
         if (request.getQuantity() <= 0) {
             return new ApiResponse<>("Quantity must be greater than 0", null);
@@ -57,6 +59,7 @@ public class OrderService {
         productRepository.save(product);
 
         Order order = new Order();
+        order.setId(sequenceService.nextId("orders"));
         order.setUser(userOptional.get());
         order.setProduct(product);
         order.setQuantity(request.getQuantity());

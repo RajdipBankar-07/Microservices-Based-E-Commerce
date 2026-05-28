@@ -11,12 +11,17 @@ import java.util.Optional;
 public class ProductService {
 
     private final ProductRepository repo;
+    private final SequenceGeneratorService sequenceService;
 
-    public ProductService(ProductRepository repo) {
+    public ProductService(ProductRepository repo, SequenceGeneratorService sequenceService) {
         this.repo = repo;
+        this.sequenceService = sequenceService;
     }
 
     public Product save(Product product) {
+        if (product.getId() == null) {
+            product.setId(sequenceService.nextId("products"));
+        }
         return repo.save(product);
     }
 

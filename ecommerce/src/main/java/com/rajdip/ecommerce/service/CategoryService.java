@@ -18,16 +18,18 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository  productRepository;
+    private final SequenceGeneratorService sequenceService;
 
     public CategoryService(CategoryRepository categoryRepository,
-                           ProductRepository productRepository) {
+                           ProductRepository productRepository,
+                           SequenceGeneratorService sequenceService) {
         this.categoryRepository = categoryRepository;
         this.productRepository  = productRepository;
+        this.sequenceService    = sequenceService;
     }
 
     // ── 1. Create Category ─────────────────────────────────────────────────────
 
-    @Transactional
     public ApiResponse<Category> create(CategoryRequest request) {
         if (categoryRepository.existsByNameIgnoreCase(request.getName())) {
             return new ApiResponse<>("Category with name '" + request.getName() + "' already exists", null);
@@ -36,6 +38,7 @@ public class CategoryService {
         Category category = new Category();
         category.setName(request.getName().trim());
         category.setDescription(request.getDescription());
+        category.setId(sequenceService.nextId("categories"));
         category.setCreatedAt(LocalDateTime.now());
 
         return new ApiResponse<>("Category created successfully", categoryRepository.save(category));

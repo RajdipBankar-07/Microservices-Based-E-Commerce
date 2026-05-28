@@ -25,10 +25,14 @@ public class UserService {
     private JwtService jwtService;
 
     @Autowired
+    private SequenceGeneratorService sequenceService;
+
+    @Autowired
     private EmailService emailService;
 
     // Register User
     public User register(User user) {
+        user.setId(sequenceService.nextId("users"));
         user.setEmail(user.getEmail().trim().toLowerCase());
         user.setRole(normalizeRole(user.getRole()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));

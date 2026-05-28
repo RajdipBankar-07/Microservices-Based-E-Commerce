@@ -1,48 +1,36 @@
 package com.rajdip.ecommerce.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
-@Table(name = "cart_items",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "product_id"}))
+@Document(collection = "cart_items")
+@CompoundIndex(name = "uq_cart_user_product", def = "{'user.$id': 1, 'product.$id': 1}", unique = true)
 public class CartItem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @DBRef
     @JsonIgnoreProperties({"password"})
     private User user;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "product_id", nullable = false)
+    @DBRef
     private Product product;
 
     @Min(value = 1, message = "Quantity must be at least 1")
-    @Column(nullable = false)
     private int quantity;
 
-    // ── Getters ────────────────────────────────────────────────────────────────
+    public Long    getId()       { return id; }
+    public User    getUser()     { return user; }
+    public Product getProduct()  { return product; }
+    public int     getQuantity() { return quantity; }
 
-    public Long getId() { return id; }
-
-    public User getUser() { return user; }
-
-    public Product getProduct() { return product; }
-
-    public int getQuantity() { return quantity; }
-
-    // ── Setters ────────────────────────────────────────────────────────────────
-
-    public void setId(Long id) { this.id = id; }
-
-    public void setUser(User user) { this.user = user; }
-
-    public void setProduct(Product product) { this.product = product; }
-
-    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public void setId(Long id)            { this.id = id; }
+    public void setUser(User user)        { this.user = user; }
+    public void setProduct(Product p)     { this.product = p; }
+    public void setQuantity(int qty)      { this.quantity = qty; }
 }

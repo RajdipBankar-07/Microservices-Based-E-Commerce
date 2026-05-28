@@ -8,7 +8,6 @@ import com.rajdip.ecommerce.model.User;
 import com.rajdip.ecommerce.repository.OrderRepository;
 import com.rajdip.ecommerce.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,15 +26,18 @@ public class PaymentService {
     private final OrderRepository   orderRepository;
     private final OrderService      orderService;
     private final EmailService      emailService;
+    private final SequenceGeneratorService sequenceService;
 
     public PaymentService(PaymentRepository paymentRepository,
                           OrderRepository orderRepository,
                           OrderService orderService,
-                          EmailService emailService) {
+                          EmailService emailService,
+                          SequenceGeneratorService sequenceService) {
         this.paymentRepository = paymentRepository;
         this.orderRepository   = orderRepository;
         this.orderService      = orderService;
         this.emailService      = emailService;
+        this.sequenceService   = sequenceService;
     }
 
     // ── 1. Initiate Payment ────────────────────────────────────────────────────
@@ -50,7 +52,6 @@ public class PaymentService {
      *  - A unique transactionId is generated immediately.
      *  - CASH_ON_DELIVERY payments are auto-marked SUCCESS.
      */
-    @Transactional
     public ApiResponse<Payment> initiatePayment(PaymentRequest request) {
 
         // Validate payment method
@@ -81,6 +82,7 @@ public class PaymentService {
 
         // Build payment
         Payment payment = new Payment();
+        payment.setId(sequenceService.nextId("payments"));
         payment.setOrder(order);
         payment.setUser(order.getUser());
         payment.setAmount(amount);
@@ -113,7 +115,6 @@ public class PaymentService {
      *  - Only PENDING payments can be updated.
      *  - Allowed new statuses: SUCCESS, FAILED.
      */
-    @Transactional
     public ApiResponse<Payment> updateStatus(Long paymentId, String newStatus) {
 
         if (!"SUCCESS".equals(newStatus) && !"FAILED".equals(newStatus)) {
@@ -183,7 +184,6 @@ public class PaymentService {
      *  1. Marks Payment → REFUNDED
      *  2. Triggers OrderService.refundOrder() → restores stock & marks Order → REFUNDED
      */
-    @Transactional
     public ApiResponse<Payment> refundPayment(Long paymentId) {
         Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
         if (paymentOpt.isEmpty()) {
