@@ -48,6 +48,8 @@ public class UserController {
 
         if ("Login Successful".equals(result.getMessage())) {
             return ResponseEntity.ok(result);
+        } else if ("Account Deactivated".equals(result.getMessage())) {
+            return ResponseEntity.status(403).body(result);
         } else if ("Wrong Password".equals(result.getMessage())) {
             return ResponseEntity.status(401).body(result);
         } else {

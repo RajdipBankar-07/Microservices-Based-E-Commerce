@@ -64,6 +64,7 @@ public class OrderService {
         order.setProduct(product);
         order.setQuantity(request.getQuantity());
         order.setStatus("PLACED");
+        order.setOrderDate(java.time.LocalDateTime.now());
 
         Order savedOrder = orderRepository.save(order);
         // Day 6: notify buyer

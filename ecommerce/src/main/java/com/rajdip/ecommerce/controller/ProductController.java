@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,8 +44,15 @@ public class ProductController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Products retrieved successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
     })
-    public List<Product> getAll() {
-        return service.getAll();
+    public List<Product> getAll(Authentication authentication) {
+        List<Product> products = service.getAll();
+        if (authentication == null || authentication.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            products = products.stream()
+                    .filter(p -> p.getDeactivateAt() == null || java.time.LocalDateTime.now().isBefore(p.getDeactivateAt()))
+                    .toList();
+        }
+        return products;
     }
 
     @GetMapping("/{id}")
@@ -55,11 +63,19 @@ public class ProductController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Product not found")
     })
-    public ResponseEntity<Product> getById(@PathVariable Long id) {
-        Optional<Product> product = service.getById(id);
-
-        return product.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<Product> getById(@PathVariable Long id, Authentication authentication) {
+        Optional<Product> productOpt = service.getById(id);
+        if (productOpt.isPresent()) {
+            Product product = productOpt.get();
+            if (authentication == null || authentication.getAuthorities().stream()
+                    .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+                if (product.getDeactivateAt() != null && java.time.LocalDateTime.now().isAfter(product.getDeactivateAt())) {
+                    return ResponseEntity.notFound().build();
+                }
+            }
+            return ResponseEntity.ok(product);
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{id}")

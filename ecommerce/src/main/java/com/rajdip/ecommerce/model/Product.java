@@ -7,6 +7,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Document(collection = "products")
 public class Product {
 
@@ -25,15 +27,25 @@ public class Product {
     @DBRef(lazy = true)
     private Category category;
 
-    public Long     getId()          { return id; }
-    public String   getName()        { return name; }
-    public double   getPrice()       { return price; }
-    public int      getQuantity()    { return quantity; }
-    public Category getCategory()    { return category; }
+    private String description;
+    private String imageUrl;
+    private LocalDateTime deactivateAt;
 
-    public void setId(Long id)              { this.id = id; }
-    public void setName(String name)        { this.name = name; }
-    public void setPrice(double price)      { this.price = price; }
-    public void setQuantity(int quantity)   { this.quantity = quantity; }
-    public void setCategory(Category c)     { this.category = c; }
+    public Long          getId()           { return id; }
+    public String        getName()         { return name; }
+    public double        getPrice()        { return price; }
+    public int           getQuantity()     { return quantity; }
+    public Category      getCategory()     { return category; }
+    public String        getDescription()  { return description; }
+    public String        getImageUrl()     { return imageUrl; }
+    public LocalDateTime getDeactivateAt() { return deactivateAt; }
+
+    public void setId(Long id)                         { this.id = id; }
+    public void setName(String name)                   { this.name = name; }
+    public void setPrice(double price)                 { this.price = price; }
+    public void setQuantity(int quantity)              { this.quantity = quantity; }
+    public void setCategory(Category c)                { this.category = c; }
+    public void setDescription(String d)               { this.description = d; }
+    public void setImageUrl(String url)                { this.imageUrl = url; }
+    public void setDeactivateAt(LocalDateTime dateAt) { this.deactivateAt = dateAt; }
 }

@@ -162,4 +162,19 @@ public class DashboardController {
                 new ApiResponse<>("Recent orders retrieved", dashboardService.getRecentOrders())
         );
     }
+
+    // ── GET /admin/dashboard/sales-report ──────────────────────────────────────
+
+    @GetMapping("/sales-report")
+    @Operation(summary = "Sales report charts data", description = "Aggregated sales data by day, week, month, and year for graphs.")
+    @SecurityRequirement(name = "Bearer Auth")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Sales report data retrieved"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden - ADMIN only")
+    })
+    public ResponseEntity<ApiResponse<SalesDashboardData>> getSalesReport() {
+        return ResponseEntity.ok(
+                new ApiResponse<>("Sales report data retrieved", dashboardService.getSalesReport())
+        );
+    }
 }

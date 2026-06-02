@@ -44,6 +44,9 @@ public class ProductService {
         product.setName(updatedProduct.getName());
         product.setPrice(updatedProduct.getPrice());
         product.setQuantity(updatedProduct.getQuantity());
+        product.setDescription(updatedProduct.getDescription());
+        product.setImageUrl(updatedProduct.getImageUrl());
+        product.setDeactivateAt(updatedProduct.getDeactivateAt());
 
         // Preserve or update category if provided
         if (updatedProduct.getCategory() != null) {

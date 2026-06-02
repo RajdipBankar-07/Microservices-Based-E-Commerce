@@ -6,6 +6,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Document(collection = "orders")
 public class Order {
 
@@ -24,15 +26,19 @@ public class Order {
 
     private String status;
 
-    public Long    getId()       { return id; }
-    public User    getUser()     { return user; }
-    public Product getProduct()  { return product; }
-    public int     getQuantity() { return quantity; }
-    public String  getStatus()   { return status; }
+    private LocalDateTime orderDate = LocalDateTime.now();
 
-    public void setId(Long id)           { this.id = id; }
-    public void setUser(User user)       { this.user = user; }
-    public void setProduct(Product p)    { this.product = p; }
-    public void setQuantity(int q)       { this.quantity = q; }
-    public void setStatus(String s)      { this.status = s; }
+    public Long          getId()         { return id; }
+    public User          getUser()       { return user; }
+    public Product       getProduct()    { return product; }
+    public int           getQuantity()   { return quantity; }
+    public String        getStatus()     { return status; }
+    public LocalDateTime getOrderDate()  { return orderDate; }
+
+    public void setId(Long id)                   { this.id = id; }
+    public void setUser(User user)               { this.user = user; }
+    public void setProduct(Product p)            { this.product = p; }
+    public void setQuantity(int q)               { this.quantity = q; }
+    public void setStatus(String s)              { this.status = s; }
+    public void setOrderDate(LocalDateTime date) { this.orderDate = date; }
 }

@@ -180,4 +180,77 @@ public class DashboardService {
         org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id");
         return orderRepository.findAll(PageRequest.of(0, RECENT_ORDERS_COUNT, sort)).getContent();
     }
+
+    public SalesDashboardData getSalesReport() {
+        List<Order> allOrders = orderRepository.findAll();
+        
+        // Filter out CANCELLED and REFUNDED orders for actual sales reporting
+        List<Order> validOrders = allOrders.stream()
+                .filter(o -> o.getStatus() != null && 
+                            !"CANCELLED".equalsIgnoreCase(o.getStatus()) && 
+                            !"REFUNDED".equalsIgnoreCase(o.getStatus()))
+                .toList();
+
+        // 1. Day stats: Today's orders grouped by hour of day (0-23)
+        List<SalesChartPoint> dayPoints = new ArrayList<>();
+        java.time.LocalDate today = java.time.LocalDate.now();
+        for (int hour = 0; hour < 24; hour++) {
+            final int h = hour;
+            String label = String.format("%02d:00", h);
+            List<Order> hourOrders = validOrders.stream()
+                    .filter(o -> o.getOrderDate() != null && 
+                                o.getOrderDate().toLocalDate().equals(today) && 
+                                o.getOrderDate().getHour() == h)
+                    .toList();
+            double rev = hourOrders.stream().mapToDouble(o -> o.getQuantity() * (o.getProduct() != null ? o.getProduct().getPrice() : 0)).sum();
+            dayPoints.add(new SalesChartPoint(label, rev, hourOrders.size()));
+        }
+
+        // 2. Week stats: Last 7 days including today
+        List<SalesChartPoint> weekPoints = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            java.time.LocalDate d = today.minusDays(i);
+            String label = d.getDayOfWeek().getDisplayName(java.time.format.TextStyle.SHORT, Locale.ENGLISH);
+            List<Order> dayOrders = validOrders.stream()
+                    .filter(o -> o.getOrderDate() != null && o.getOrderDate().toLocalDate().equals(d))
+                    .toList();
+            double rev = dayOrders.stream().mapToDouble(o -> o.getQuantity() * (o.getProduct() != null ? o.getProduct().getPrice() : 0)).sum();
+            weekPoints.add(new SalesChartPoint(label, rev, dayOrders.size()));
+        }
+
+        // 3. Month stats: Days of the current month
+        List<SalesChartPoint> monthPoints = new ArrayList<>();
+        java.time.YearMonth currentYearMonth = java.time.YearMonth.now();
+        int daysInMonth = currentYearMonth.lengthOfMonth();
+        for (int day = 1; day <= daysInMonth; day++) {
+            final int dNum = day;
+            String label = String.format("%d", dNum);
+            List<Order> dayOrders = validOrders.stream()
+                    .filter(o -> o.getOrderDate() != null && 
+                                o.getOrderDate().getYear() == currentYearMonth.getYear() && 
+                                o.getOrderDate().getMonthValue() == currentYearMonth.getMonthValue() && 
+                                o.getOrderDate().getDayOfMonth() == dNum)
+                    .toList();
+            double rev = dayOrders.stream().mapToDouble(o -> o.getQuantity() * (o.getProduct() != null ? o.getProduct().getPrice() : 0)).sum();
+            monthPoints.add(new SalesChartPoint(label, rev, dayOrders.size()));
+        }
+
+        // 4. Year stats: Months of the current year (Jan-Dec)
+        List<SalesChartPoint> yearPoints = new ArrayList<>();
+        String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+        int currentYear = today.getYear();
+        for (int monthVal = 1; monthVal <= 12; monthVal++) {
+            final int mNum = monthVal;
+            String label = monthNames[mNum - 1];
+            List<Order> monthOrders = validOrders.stream()
+                    .filter(o -> o.getOrderDate() != null && 
+                                o.getOrderDate().getYear() == currentYear && 
+                                o.getOrderDate().getMonthValue() == mNum)
+                    .toList();
+            double rev = monthOrders.stream().mapToDouble(o -> o.getQuantity() * (o.getProduct() != null ? o.getProduct().getPrice() : 0)).sum();
+            yearPoints.add(new SalesChartPoint(label, rev, monthOrders.size()));
+        }
+
+        return new SalesDashboardData(dayPoints, weekPoints, monthPoints, yearPoints);
+    }
 }

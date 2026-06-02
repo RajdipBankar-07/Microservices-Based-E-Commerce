@@ -4,10 +4,14 @@ import com.rajdip.ecommerce.model.Category;
 import com.rajdip.ecommerce.model.Coupon;
 import com.rajdip.ecommerce.model.Product;
 import com.rajdip.ecommerce.model.User;
+import com.rajdip.ecommerce.model.Order;
+import com.rajdip.ecommerce.model.Announcement;
 import com.rajdip.ecommerce.repository.CategoryRepository;
 import com.rajdip.ecommerce.repository.CouponRepository;
 import com.rajdip.ecommerce.repository.ProductRepository;
 import com.rajdip.ecommerce.repository.UserRepository;
+import com.rajdip.ecommerce.repository.OrderRepository;
+import com.rajdip.ecommerce.repository.AnnouncementRepository;
 import com.rajdip.ecommerce.service.SequenceGeneratorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +31,8 @@ public class DataSeeder implements CommandLineRunner {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final CouponRepository couponRepository;
+    private final OrderRepository orderRepository;
+    private final AnnouncementRepository announcementRepository;
     private final SequenceGeneratorService sequenceService;
     private final PasswordEncoder passwordEncoder;
 
@@ -34,12 +40,16 @@ public class DataSeeder implements CommandLineRunner {
                       CategoryRepository categoryRepository,
                       ProductRepository productRepository,
                       CouponRepository couponRepository,
+                      OrderRepository orderRepository,
+                      AnnouncementRepository announcementRepository,
                       SequenceGeneratorService sequenceService,
                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
         this.couponRepository = couponRepository;
+        this.orderRepository = orderRepository;
+        this.announcementRepository = announcementRepository;
         this.sequenceService = sequenceService;
         this.passwordEncoder = passwordEncoder;
     }
@@ -205,6 +215,83 @@ public class DataSeeder implements CommandLineRunner {
             log.info("Coupons database is already seeded.");
         }
 
+        // 5. Seed Orders (Historical)
+        if (orderRepository.count() == 0) {
+            log.info("Seeding historical orders for sales graph analytics...");
+            
+            // Get user and products
+            User customer = userRepository.findByEmail("customer@shopeasy.com").orElse(null);
+            Product phone = productRepository.findAll().stream().filter(p -> p.getName().contains("iPhone")).findFirst().orElse(null);
+            Product jacket = productRepository.findAll().stream().filter(p -> p.getName().contains("Jacket")).findFirst().orElse(null);
+            Product coffee = productRepository.findAll().stream().filter(p -> p.getName().contains("Coffee")).findFirst().orElse(null);
+            
+            if (customer != null && phone != null) {
+                LocalDateTime now = LocalDateTime.now();
+                
+                // Today orders (hourly)
+                createOrder(customer, phone, 1, "PLACED", now.minusHours(1), orderRepository);
+                createOrder(customer, jacket != null ? jacket : phone, 2, "PLACED", now.minusHours(4), orderRepository);
+                createOrder(customer, coffee != null ? coffee : phone, 1, "PLACED", now.minusHours(8), orderRepository);
+                
+                // Yesterday orders
+                createOrder(customer, phone, 1, "PLACED", now.minusDays(1), orderRepository);
+                createOrder(customer, jacket != null ? jacket : phone, 1, "PLACED", now.minusDays(1).minusHours(2), orderRepository);
+                
+                // Past days this week
+                createOrder(customer, phone, 1, "PLACED", now.minusDays(2), orderRepository);
+                createOrder(customer, coffee != null ? coffee : phone, 1, "PLACED", now.minusDays(3), orderRepository);
+                createOrder(customer, jacket != null ? jacket : phone, 1, "PLACED", now.minusDays(4), orderRepository);
+                createOrder(customer, phone, 1, "PLACED", now.minusDays(5), orderRepository);
+                
+                // Past months this year
+                createOrder(customer, phone, 1, "PLACED", now.minusMonths(1), orderRepository);
+                createOrder(customer, jacket != null ? jacket : phone, 1, "PLACED", now.minusMonths(2), orderRepository);
+                createOrder(customer, coffee != null ? coffee : phone, 2, "PLACED", now.minusMonths(3), orderRepository);
+                createOrder(customer, phone, 1, "PLACED", now.minusMonths(4), orderRepository);
+                
+                log.info("Successfully seeded historical orders.");
+            }
+        }
+
+        // 6. Seed Announcements
+        if (announcementRepository.count() == 0) {
+            log.info("Seeding promotions and announcements...");
+            
+            Product phone = productRepository.findAll().stream().filter(p -> p.getName().contains("iPhone")).findFirst().orElse(null);
+            Product jacket = productRepository.findAll().stream().filter(p -> p.getName().contains("Jacket")).findFirst().orElse(null);
+            
+            Announcement discountAnn = new Announcement();
+            discountAnn.setId(sequenceService.nextId("announcements"));
+            discountAnn.setTitle("Mega Electronics Clearance!");
+            discountAnn.setMessage("Get the iPhone 15 Pro at an unbeatable price today only. Stocks are limited!");
+            discountAnn.setProduct(phone);
+            discountAnn.setDisplayUntil(LocalDateTime.now().plusDays(2));
+            discountAnn.setActive(true);
+            announcementRepository.save(discountAnn);
+
+            Announcement apparelAnn = new Announcement();
+            apparelAnn.setId(sequenceService.nextId("announcements"));
+            apparelAnn.setTitle("Fashion Flash Sale - 25% Off Leather Jackets!");
+            apparelAnn.setMessage("Upgrade your wardrobe. This premium leather jacket sale expires soon!");
+            apparelAnn.setProduct(jacket);
+            apparelAnn.setDisplayUntil(LocalDateTime.now().plusHours(12));
+            apparelAnn.setActive(true);
+            announcementRepository.save(apparelAnn);
+
+            log.info("Successfully seeded 2 storefront announcements.");
+        }
+
         log.info("Data seeding inspection finished successfully!");
+    }
+
+    private void createOrder(User user, Product product, int quantity, String status, LocalDateTime date, OrderRepository repo) {
+        Order order = new Order();
+        order.setId(sequenceService.nextId("orders"));
+        order.setUser(user);
+        order.setProduct(product);
+        order.setQuantity(quantity);
+        order.setStatus(status);
+        order.setOrderDate(date);
+        repo.save(order);
     }
 }

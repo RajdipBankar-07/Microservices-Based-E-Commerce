@@ -32,8 +32,12 @@ public class UserService {
 
     // Register User
     public User register(User user) {
+        String cleanEmail = user.getEmail().trim().toLowerCase();
+        if (repo.existsByEmail(cleanEmail)) {
+            throw new IllegalArgumentException("Email is already registered");
+        }
         user.setId(sequenceService.nextId("users"));
-        user.setEmail(user.getEmail().trim().toLowerCase());
+        user.setEmail(cleanEmail);
         user.setRole(normalizeRole(user.getRole()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User saved = repo.save(user);
@@ -48,6 +52,9 @@ public class UserService {
         Optional<User> user = repo.findByEmail(email);
 
         if (user.isPresent()) {
+            if (!user.get().isActive()) {
+                return new ApiResponse<>("Account Deactivated", null);
+            }
             boolean passwordMatches = passwordEncoder.matches(password, user.get().getPassword());
 
             if (!passwordMatches && password.equals(user.get().getPassword())) {
@@ -99,8 +106,40 @@ public class UserService {
             return new ApiResponse<>("User not found", null);
         }
 
+        if (!user.get().isActive()) {
+            return new ApiResponse<>("Account Deactivated", null);
+        }
+
         String token = jwtService.generateToken(user.get().getEmail(), normalizeRole(user.get().getRole()));
         return new ApiResponse<>("Token refreshed successfully", token);
+    }
+
+    // ── Administrative Actions ──────────────────────────────────────────────────
+
+    public java.util.List<User> getAllUsers() {
+        java.util.List<User> users = repo.findAll();
+        for (User u : users) {
+            u.setPassword(null);
+        }
+        return users;
+    }
+
+    public Optional<User> toggleUserStatus(Long id, boolean active) {
+        Optional<User> userOpt = repo.findById(id);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            user.setActive(active);
+            return Optional.of(repo.save(user));
+        }
+        return Optional.empty();
+    }
+
+    public boolean deleteUser(Long id) {
+        if (repo.existsById(id)) {
+            repo.deleteById(id);
+            return true;
+        }
+        return false;
     }
 
     public ApiResponse<String> logout(String token) {
