@@ -131,7 +131,7 @@ public class EmailService {
               .container { max-width:600px; margin:32px auto; background:#ffffff;
                            border-radius:12px; overflow:hidden;
                            box-shadow:0 4px 20px rgba(0,0,0,0.08); }
-              .header { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+              .header { background:linear-gradient(135deg,#667eea 0%%,#764ba2 100%%);
                         padding:32px 24px; text-align:center; }
               .header h1 { color:#fff; margin:0; font-size:24px; letter-spacing:1px; }
               .header p  { color:rgba(255,255,255,0.85); margin:6px 0 0; font-size:14px; }

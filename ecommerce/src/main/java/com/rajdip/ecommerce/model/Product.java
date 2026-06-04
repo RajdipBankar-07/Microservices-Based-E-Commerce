@@ -48,4 +48,17 @@ public class Product {
     public void setDescription(String d)               { this.description = d; }
     public void setImageUrl(String url)                { this.imageUrl = url; }
     public void setDeactivateAt(LocalDateTime dateAt) { this.deactivateAt = dateAt; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Product product = (Product) o;
+        return id != null && id.equals(product.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
+    }
 }

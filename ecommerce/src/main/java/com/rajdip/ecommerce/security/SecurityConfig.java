@@ -62,7 +62,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/paginated/payments").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/paginated/payments/status/**").hasRole("ADMIN")
                         .requestMatchers("/paginated/**").authenticated()
-                        .requestMatchers("/wishlist/**").authenticated()
+                        .requestMatchers("/wishlist", "/wishlist/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .formLogin(form -> form.disable())

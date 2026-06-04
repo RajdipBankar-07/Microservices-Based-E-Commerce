@@ -2,8 +2,11 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
+import SearchBar from "@/components/SearchBar";
 import { 
   ShoppingCart, 
   Heart, 
@@ -17,6 +20,9 @@ import {
 
 export default function Navbar() {
   const { user, logout, loading } = useAuth();
+  const { cartItems } = useCart();
+  const { wishlistItems } = useWishlist();
+  const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -29,12 +35,15 @@ export default function Navbar() {
     await logout();
   };
 
+  const cartCount = user ? cartItems.reduce((acc, item) => acc + item.quantity, 0) : 0;
+  const wishlistCount = user ? wishlistItems.length : 0;
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/[0.05] bg-zinc-950/65 backdrop-blur-xl transition-all">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         
         {/* Brand Group */}
-        <div className="flex items-center gap-10">
+        <div className="flex items-center gap-10 flex-1">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.3)] group-hover:scale-105 transition-transform duration-200">
               <ShoppingBag className="h-5 w-5" />
@@ -86,8 +95,51 @@ export default function Navbar() {
           </nav>
         </div>
 
+        {/* Global Search Bar (Desktop) */}
+        <div className="hidden md:block mx-4 max-w-xs w-full">
+          <React.Suspense fallback={<div className="h-8 bg-zinc-900/50 rounded-xl w-full" />}>
+            <SearchBar />
+          </React.Suspense>
+        </div>
+
+
         {/* Action Widgets */}
         <div className="hidden md:flex items-center gap-4">
+
+          {/* Wishlist Header Icon */}
+          <button 
+            onClick={() => {
+              if (!user) router.push("/login");
+              else router.push("/wishlist");
+            }}
+            className="relative p-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/[0.12] hover:scale-105 active:scale-95 transition-all text-zinc-400 hover:text-rose-450 cursor-pointer"
+            title="My Wishlist"
+          >
+            <Heart className={`h-4.5 w-4.5 ${wishlistCount > 0 ? "fill-rose-500 text-rose-500" : ""}`} />
+            {wishlistCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white shadow-lg shadow-rose-500/30">
+                {wishlistCount}
+              </span>
+            )}
+          </button>
+
+          {/* Cart Header Icon */}
+          <button 
+            onClick={() => {
+              if (!user) router.push("/login");
+              else router.push("/cart");
+            }}
+            className="relative p-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/[0.12] hover:scale-105 active:scale-95 transition-all text-zinc-400 hover:text-indigo-400 cursor-pointer"
+            title="Shopping Cart"
+          >
+            <ShoppingCart className="h-4.5 w-4.5" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-indigo-600 text-[9px] font-bold text-white shadow-lg shadow-indigo-650/30">
+                {cartCount}
+              </span>
+            )}
+          </button>
+
           {loading ? (
             <div className="h-8 w-8 animate-pulse rounded-full bg-zinc-800" />
           ) : user ? (

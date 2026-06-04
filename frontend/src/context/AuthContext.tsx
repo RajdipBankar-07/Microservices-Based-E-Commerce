@@ -2,6 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { api, ApiError } from "@/utils/api";
+import { WishlistResponseDTO } from "@/dto/WishlistResponseDTO";
+import { CartItem } from "@/dto/CartItem";
+import { Product } from "@/dto/Product";
 
 export interface UserProfile {
   id: number;
@@ -14,6 +17,8 @@ interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
   loading: boolean;
+  theme: "light" | "dark";
+  toggleTheme: () => void;
   login: (email: string, password: String) => Promise<void>;
   register: (name: string, email: string, password: String) => Promise<void>;
   logout: () => Promise<void>;
@@ -25,6 +30,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
+    }
+    return 'light';
+  });
 
   // Initialize and load user if token is present
   useEffect(() => {
@@ -105,8 +116,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('theme', newTheme);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, theme, toggleTheme, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

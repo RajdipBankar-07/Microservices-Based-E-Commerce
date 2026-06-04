@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { api } from "@/utils/api";
+import { useSearchParams, useRouter } from "next/navigation";
 import { 
   Search, 
   ShoppingCart, 
@@ -35,30 +38,62 @@ interface Product {
   imageUrl?: string;
 }
 
-export default function HomePage() {
+function HomePageContent() {
   const { user, loading: authLoading } = useAuth();
+  const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const qParam = searchParams.get("q") || "";
   
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(qParam);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedProductDetails, setSelectedProductDetails] = useState<Product | null>(null);
+  const [cartAdding, setCartAdding] = useState<number | null>(null);
+  const [wishlistToggling, setWishlistToggling] = useState<number | null>(null);
+
+  const handleToggleWishlist = async (prodId: number) => {
+    if (!user) {
+      alert("Please log in to add items to your wishlist.");
+      router.push("/login");
+      return;
+    }
+    setWishlistToggling(prodId);
+    try {
+      if (isInWishlist(prodId)) {
+        await removeFromWishlist(prodId);
+      } else {
+        await addToWishlist(prodId);
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to update wishlist.");
+    } finally {
+      setWishlistToggling(null);
+    }
+  };
 
   // Storefront Announcements States
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [activeAnnIdx, setActiveAnnIdx] = useState(0);
   const [dismissedAnns, setDismissedAnns] = useState<number[]>([]);
 
-  // Fetch catalog data when authenticated user is loaded
+  // Fetch catalog data when authenticated user is loaded or search query changes
   useEffect(() => {
     if (user) {
-      fetchCatalog();
+      fetchCatalog(qParam);
     }
-  }, [user]);
+  }, [user, qParam]);
 
-  const fetchCatalog = async () => {
+  // Keep local search input synced with URL param
+  useEffect(() => {
+    setSearchQuery(qParam);
+  }, [qParam]);
+
+  const fetchCatalog = async (keywordQuery = "") => {
     setLoading(true);
     setError(null);
     try {
@@ -66,8 +101,16 @@ export default function HomePage() {
       const catResponse = await api.get<{ message: string; data: Category[] }>("/categories");
       setCategories(catResponse?.data || []);
 
-      // 2. Fetch products (direct list representation)
-      const prodResponse = await api.get<Product[]>("/products");
+      // 2. Fetch products (conditional: search endpoint vs all products)
+      let prodResponse;
+      if (keywordQuery.trim()) {
+        const searchRes = await api.get<{ message: string; data: { products: Product[] } }>(
+          `/products/search?keyword=${encodeURIComponent(keywordQuery)}`
+        );
+        prodResponse = searchRes?.data?.products || [];
+      } else {
+        prodResponse = await api.get<Product[]>("/products");
+      }
       setProducts(prodResponse || []);
 
       // 3. Fetch announcements
@@ -84,7 +127,18 @@ export default function HomePage() {
     }
   };
 
-  // Client-side filtering logic
+  const handleAddToCart = async (prodId: number) => {
+    setCartAdding(prodId);
+    try {
+      await addToCart(prodId, 1);
+    } catch (err: any) {
+      alert(err.message || "Could not add item to cart.");
+    } finally {
+      setCartAdding(null);
+    }
+  };
+
+  // Client-side filtering logic (category filter + local search fallback if typing without pressing enter/debounce)
   const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === null || product.category?.id === selectedCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,6 +148,7 @@ export default function HomePage() {
 
   // Render Skeleton cards
   const renderSkeletons = () => (
+
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
       {[1, 2, 3, 4].map((i) => (
         <div key={i} className="glass-premium-card rounded-2xl p-5 border border-white/[0.05] h-80 flex flex-col justify-between shimmer-premium">
@@ -357,13 +412,14 @@ export default function HomePage() {
             <AlertCircle className="h-6 w-6 shrink-0" />
             <div className="flex-1 text-sm">{error}</div>
             <button 
-              onClick={fetchCatalog}
+              onClick={() => fetchCatalog()}
               className="text-xs font-bold bg-rose-500/20 px-3 py-1.5 rounded-lg hover:bg-rose-500/30 transition-colors"
             >
               Retry
             </button>
           </div>
         )}
+
 
         {/* Catalog Grid View */}
         {loading ? (
@@ -393,14 +449,18 @@ export default function HomePage() {
 
                       {/* Floating Wishlist button */}
                       <button 
+                        type="button"
+                        disabled={wishlistToggling === product.id}
                         onClick={(e) => {
                           e.stopPropagation();
-                          alert("Saved to wishlist!");
+                          handleToggleWishlist(product.id);
                         }}
-                        className="absolute top-2.5 right-2.5 z-10 p-2 rounded-lg bg-black/60 backdrop-blur-md text-zinc-400 hover:text-rose-400 border border-white/[0.08] hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                        title="Save to Wishlist"
+                        className={`absolute top-2.5 right-2.5 z-10 p-2 rounded-lg bg-black/60 backdrop-blur-md border border-white/[0.08] hover:scale-105 active:scale-95 transition-all cursor-pointer ${
+                          isInWishlist(product.id) ? "text-rose-500 hover:text-rose-450" : "text-zinc-400 hover:text-rose-400"
+                        }`}
+                        title={isInWishlist(product.id) ? "Remove from Wishlist" : "Save to Wishlist"}
                       >
-                        <Heart className="h-3.5 w-3.5" />
+                        <Heart className={`h-3.5 w-3.5 ${isInWishlist(product.id) ? "fill-rose-500" : ""}`} />
                       </button>
 
                       {product.imageUrl ? (
@@ -454,12 +514,16 @@ export default function HomePage() {
 
                     {/* Add to Cart button trigger */}
                     <button
-                      disabled={isOutOfStock}
-                      onClick={() => alert("Added to cart successfully!")}
+                      disabled={isOutOfStock || cartAdding === product.id}
+                      onClick={() => handleAddToCart(product.id)}
                       className="p-3 rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
                       title="Add to Shopping Cart"
                     >
-                      <ShoppingCart className="h-5 w-5" />
+                      {cartAdding === product.id ? (
+                        <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <ShoppingCart className="h-5 w-5" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -555,14 +619,18 @@ export default function HomePage() {
                   </div>
 
                   <button
-                    disabled={selectedProductDetails.quantity === 0}
-                    onClick={() => {
-                      alert("Added to cart successfully!");
+                    disabled={selectedProductDetails.quantity === 0 || cartAdding === selectedProductDetails.id}
+                    onClick={async () => {
+                      await handleAddToCart(selectedProductDetails.id);
                       setSelectedProductDetails(null);
                     }}
                     className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
                   >
-                    <ShoppingCart className="h-5 w-5" />
+                    {cartAdding === selectedProductDetails.id ? (
+                      <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <ShoppingCart className="h-5 w-5" />
+                    )}
                     Add To Cart
                   </button>
                 </div>
@@ -578,3 +646,12 @@ export default function HomePage() {
     </div>
   );
 }
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-64 text-zinc-400">Loading catalog...</div>}>
+      <HomePageContent />
+    </Suspense>
+  );
+}
+

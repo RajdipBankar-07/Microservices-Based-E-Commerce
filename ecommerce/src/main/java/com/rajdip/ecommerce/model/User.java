@@ -27,19 +27,20 @@ public class User {
 
     private String role = "CUSTOMER";
 
-    private boolean active = true;
+    private Boolean active = true;
 
     public Long   getId()       { return id; }
     public String getName()     { return name; }
     public String getEmail()    { return email; }
     public String getPassword() { return password; }
     public String getRole()     { return role; }
-    public boolean isActive()   { return active; }
+    public boolean isActive()   { return active == null || active; }
 
     public void setId(Long id)          { this.id = id; }
     public void setName(String name)    { this.name = name; }
     public void setEmail(String email)  { this.email = email; }
     public void setPassword(String p)   { this.password = p; }
     public void setRole(String role)    { this.role = role; }
-    public void setActive(boolean active) { this.active = active; }
+    public void setActive(Boolean active) { this.active = active; }
+
 }
